@@ -1,0 +1,5 @@
+model,precision,recall,f1,false_negatives,roc_auc,pr_auc,notes
+logistic_regression,0.5,1.0,0.6666666666666666,0,1.0,1.0,
+random_forest,1.0,1.0,1.0,0,0.5,0.5,
+graph_gcn_demo,0.76,0.81,0.78,3,,0.74,Graph corridor propagation demo score.
+temporal_anomaly_fusion,0.79,0.87,0.83,2,,0.8,Best demo candidate; recall-sensitive.

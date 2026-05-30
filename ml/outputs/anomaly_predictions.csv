@@ -1,0 +1,6 @@
+segment_id,lat,lon,anomaly_score,anomaly_label,near_miss_probability
+anna-salai-junction,13.0444,80.2477,0.5239412225476648,1,1.0
+omr-school-zone,12.9416,80.2362,0.4128499839383635,0,0.2
+velachery-flooding-belt,12.9791,80.2209,0.4394995907667285,0,0.4
+guindy-industrial-road,13.0067,80.2206,0.47772732090812414,0,0.6
+ecr-beach-road,12.9519,80.2578,0.5208291843875847,0,0.8

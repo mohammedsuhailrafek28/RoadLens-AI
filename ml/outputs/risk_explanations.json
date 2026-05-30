@@ -1,0 +1,117 @@
+[
+  {
+    "segment_id": "anna-salai-junction",
+    "top_factors": [
+      {
+        "factor": "Hard braking clusters",
+        "contribution": 2.8
+      },
+      {
+        "factor": "Rain intensity",
+        "contribution": 1.8
+      },
+      {
+        "factor": "Poor lighting",
+        "contribution": 1.4
+      },
+      {
+        "factor": "Road stress",
+        "contribution": 1.1
+      }
+    ],
+    "confidence": 0.86,
+    "summary": "anna-salai-junction risk is driven by braking memory, weather stress, lighting, and surface hazards."
+  },
+  {
+    "segment_id": "omr-school-zone",
+    "top_factors": [
+      {
+        "factor": "Hard braking clusters",
+        "contribution": 2.5
+      },
+      {
+        "factor": "Rain intensity",
+        "contribution": 1.3
+      },
+      {
+        "factor": "Poor lighting",
+        "contribution": 0.9
+      },
+      {
+        "factor": "Road stress",
+        "contribution": 0.8
+      }
+    ],
+    "confidence": 0.86,
+    "summary": "omr-school-zone risk is driven by braking memory, weather stress, lighting, and surface hazards."
+  },
+  {
+    "segment_id": "velachery-flooding-belt",
+    "top_factors": [
+      {
+        "factor": "Hard braking clusters",
+        "contribution": 2.2
+      },
+      {
+        "factor": "Rain intensity",
+        "contribution": 2.0
+      },
+      {
+        "factor": "Poor lighting",
+        "contribution": 1.5
+      },
+      {
+        "factor": "Road stress",
+        "contribution": 1.1
+      }
+    ],
+    "confidence": 0.86,
+    "summary": "velachery-flooding-belt risk is driven by braking memory, weather stress, lighting, and surface hazards."
+  },
+  {
+    "segment_id": "guindy-industrial-road",
+    "top_factors": [
+      {
+        "factor": "Hard braking clusters",
+        "contribution": 1.2
+      },
+      {
+        "factor": "Rain intensity",
+        "contribution": 0.9
+      },
+      {
+        "factor": "Poor lighting",
+        "contribution": 0.7
+      },
+      {
+        "factor": "Road stress",
+        "contribution": 0.6
+      }
+    ],
+    "confidence": 0.86,
+    "summary": "guindy-industrial-road risk is driven by braking memory, weather stress, lighting, and surface hazards."
+  },
+  {
+    "segment_id": "ecr-beach-road",
+    "top_factors": [
+      {
+        "factor": "Hard braking clusters",
+        "contribution": 0.9
+      },
+      {
+        "factor": "Rain intensity",
+        "contribution": 0.9
+      },
+      {
+        "factor": "Poor lighting",
+        "contribution": 0.9
+      },
+      {
+        "factor": "Road stress",
+        "contribution": 0.3
+      }
+    ],
+    "confidence": 0.86,
+    "summary": "ecr-beach-road risk is driven by braking memory, weather stress, lighting, and surface hazards."
+  }
+]

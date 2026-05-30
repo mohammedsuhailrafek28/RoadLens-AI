@@ -1,0 +1,12 @@
+{
+  "hazard_type": "pothole",
+  "confidence": 0.92,
+  "severity": 9,
+  "bbox": [
+    120,
+    80,
+    220,
+    160
+  ],
+  "risk_amplification": 7
+}

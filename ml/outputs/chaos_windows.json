@@ -1,0 +1,52 @@
+[
+  {
+    "segment_id": "anna-salai-junction",
+    "peak_risk_window": "4:30 PM - 5:15 PM",
+    "risk_probability": 0.867,
+    "drivers": [
+      "rainfall",
+      "braking anomalies",
+      "traffic compression"
+    ]
+  },
+  {
+    "segment_id": "omr-school-zone",
+    "peak_risk_window": "Next 24 hours",
+    "risk_probability": 0.733,
+    "drivers": [
+      "rainfall",
+      "braking anomalies",
+      "traffic compression"
+    ]
+  },
+  {
+    "segment_id": "velachery-flooding-belt",
+    "peak_risk_window": "Next 24 hours",
+    "risk_probability": 0.733,
+    "drivers": [
+      "rainfall",
+      "braking anomalies",
+      "traffic compression"
+    ]
+  },
+  {
+    "segment_id": "guindy-industrial-road",
+    "peak_risk_window": "Next 24 hours",
+    "risk_probability": 0.433,
+    "drivers": [
+      "rainfall",
+      "braking anomalies",
+      "traffic compression"
+    ]
+  },
+  {
+    "segment_id": "ecr-beach-road",
+    "peak_risk_window": "Next 24 hours",
+    "risk_probability": 0.333,
+    "drivers": [
+      "rainfall",
+      "braking anomalies",
+      "traffic compression"
+    ]
+  }
+]

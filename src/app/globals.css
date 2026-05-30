@@ -1,0 +1,625 @@
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+:root {
+  --background: #05070b;
+  --foreground: #e8f5ff;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-jetbrains-mono);
+  --font-heading: var(--font-space-grotesk);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 20px;
+}
+
+body {
+  min-height: 100vh;
+  background:
+    linear-gradient(135deg, rgba(14, 165, 233, 0.16), transparent 34%),
+    linear-gradient(315deg, rgba(248, 113, 113, 0.14), transparent 35%),
+    radial-gradient(circle at 50% -10%, rgba(125, 92, 255, 0.22), transparent 28%),
+    var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter), Arial, Helvetica, sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.font-heading {
+  font-family: var(--font-space-grotesk), Arial, Helvetica, sans-serif;
+}
+
+.font-mono {
+  font-family: var(--font-jetbrains-mono), "Courier New", monospace;
+}
+
+.text-slate-500 {
+  color: rgb(123 137 158);
+}
+
+.text-slate-400 {
+  color: rgb(162 174 193);
+}
+
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  background: #050b12;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.scanlines {
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.045),
+    rgba(255, 255, 255, 0.045) 1px,
+    transparent 1px,
+    transparent 4px
+  );
+  mix-blend-mode: overlay;
+  opacity: 0.32;
+}
+
+.hero-node {
+  animation: hero-node-float 4.8s ease-in-out infinite;
+}
+
+.leaflet-control-attribution {
+  font-size: 10px;
+  background: rgba(2, 6, 23, 0.72) !important;
+  color: rgba(226, 232, 240, 0.7) !important;
+}
+
+.leaflet-control-zoom a {
+  border-color: rgba(125, 211, 252, 0.2) !important;
+  background: rgba(2, 6, 23, 0.78) !important;
+  color: #cffafe !important;
+}
+
+.risk-popup .leaflet-popup-content-wrapper {
+  border-radius: 8px;
+  border: 1px solid rgba(125, 211, 252, 0.22);
+  background: rgba(2, 6, 23, 0.9);
+  color: #e0f2fe;
+  box-shadow: 0 0 32px rgba(56, 189, 248, 0.18);
+  backdrop-filter: blur(16px);
+}
+
+.risk-popup .leaflet-popup-content {
+  margin: 10px 12px;
+  min-width: 170px;
+}
+
+.risk-popup .leaflet-popup-tip {
+  background: rgba(2, 6, 23, 0.9);
+}
+
+.risk-road-glow {
+  filter: drop-shadow(0 0 8px currentColor) drop-shadow(0 0 18px currentColor);
+  stroke-linecap: round;
+  animation: road-flow 2.6s ease-in-out infinite;
+}
+
+.risk-road-glow.selected {
+  animation-duration: 1.45s;
+}
+
+.risk-road-halo {
+  filter: blur(2px) drop-shadow(0 0 22px currentColor);
+  stroke-linecap: round;
+}
+
+.risk-heat-field {
+  filter: blur(1px);
+  animation: heat-breathe 3.8s ease-in-out infinite;
+}
+
+.risk-node-core {
+  filter: drop-shadow(0 0 10px currentColor);
+}
+
+.weather-scan-layer {
+  animation: weather-scan 5.8s ease-in-out infinite;
+}
+
+.weather-scan-layer.surge {
+  animation-duration: 1.6s;
+  filter: drop-shadow(0 0 24px rgba(56, 189, 248, 0.5));
+}
+
+.braking-anomaly-icon {
+  background: transparent;
+  border: 0;
+}
+
+.braking-anomaly-icon span {
+  position: relative;
+  display: block;
+  width: var(--pulse-size);
+  height: var(--pulse-size);
+  margin: calc((64px - var(--pulse-size)) / 2);
+  border: 1px solid color-mix(in srgb, var(--pulse-color), white 22%);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pulse-color), transparent 78%);
+  box-shadow:
+    0 0 16px var(--pulse-color),
+    0 0 36px color-mix(in srgb, var(--pulse-color), transparent 25%);
+  animation: anomaly-pulse 1.8s ease-out infinite;
+}
+
+.map-surge-active .braking-anomaly-icon span {
+  animation-duration: 0.92s;
+  box-shadow:
+    0 0 20px var(--pulse-color),
+    0 0 52px color-mix(in srgb, var(--pulse-color), transparent 10%),
+    0 0 92px rgba(248, 113, 113, 0.35);
+}
+
+.braking-anomaly-icon span::after {
+  position: absolute;
+  inset: 38%;
+  border-radius: inherit;
+  background: #f8fafc;
+  box-shadow: 0 0 12px #ffffff;
+  content: "";
+}
+
+.glass-panel {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.88), rgba(2, 6, 23, 0.75)),
+    radial-gradient(circle at 50% 0%, rgba(125, 211, 252, 0.06), transparent 38%);
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  backdrop-filter: blur(18px);
+}
+
+.glass-panel::after {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(110deg, transparent 0%, rgba(125, 211, 252, 0.08) 42%, transparent 58%);
+  content: "";
+  opacity: 0;
+  transform: translateX(-70%);
+}
+
+.intelligence-panel {
+  transition:
+    border-color 240ms ease,
+    box-shadow 240ms ease,
+    transform 240ms ease;
+}
+
+.intelligence-panel:hover {
+  border-color: rgba(125, 211, 252, 0.3);
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.34),
+    0 0 34px rgba(56, 189, 248, 0.1);
+  transform: translateY(-1px);
+}
+
+.critical-risk-pulse {
+  animation: critical-breathe 2.8s ease-in-out infinite;
+}
+
+.intelligence-panel.surge {
+  border-color: rgba(248, 113, 113, 0.32);
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.36),
+    0 0 42px rgba(248, 113, 113, 0.12);
+}
+
+.intelligence-panel.surge::after,
+.surge-command::after {
+  animation: panel-sweep 2.4s ease-in-out infinite;
+  opacity: 1;
+}
+
+.telemetry-grid {
+  background-image:
+    linear-gradient(rgba(125, 211, 252, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(125, 211, 252, 0.08) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.rain-surge-shell {
+  background:
+    radial-gradient(circle at 32% 18%, rgba(248, 113, 113, 0.16), transparent 34%),
+    radial-gradient(circle at 72% 28%, rgba(56, 189, 248, 0.12), transparent 32%);
+}
+
+.surge-command {
+  position: relative;
+  overflow: hidden;
+}
+
+.surge-command::after {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(110deg, transparent 0%, rgba(248, 113, 113, 0.16) 46%, transparent 60%);
+  content: "";
+  transform: translateX(-80%);
+}
+
+.map-depth-fog {
+  background:
+    radial-gradient(circle at 22% 22%, rgba(56, 189, 248, 0.12), transparent 28%),
+    radial-gradient(circle at 66% 54%, rgba(248, 113, 113, 0.12), transparent 34%),
+    linear-gradient(180deg, rgba(2, 6, 23, 0.1), rgba(2, 6, 23, 0.42));
+  mix-blend-mode: screen;
+}
+
+.visibility-haze {
+  background: linear-gradient(95deg, transparent, rgba(148, 163, 184, 0.12), transparent);
+  opacity: 0.34;
+  transform: translateX(-35%);
+  animation: haze-drift 8s ease-in-out infinite;
+}
+
+.map-surge-active .visibility-haze {
+  opacity: 0.68;
+  animation-duration: 3.6s;
+}
+
+.city-scan {
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 24px,
+    rgba(125, 211, 252, 0.08) 25px,
+    transparent 27px
+  );
+  animation: city-scan 5s linear infinite;
+  opacity: 0.45;
+}
+
+.traffic-compression {
+  background: linear-gradient(90deg, transparent, rgba(248, 113, 113, 0.22), rgba(251, 191, 36, 0.16), transparent);
+  filter: blur(12px);
+  opacity: 0.45;
+  animation: traffic-compression 4s ease-in-out infinite;
+}
+
+.map-surge-active .traffic-compression {
+  opacity: 0.9;
+  animation-duration: 1.5s;
+}
+
+.temporal-replay {
+  box-shadow: 0 0 32px rgba(56, 189, 248, 0.08);
+}
+
+.replay-event {
+  display: block;
+  opacity: 0.42;
+  animation: replay-flash 4s ease-in-out infinite;
+}
+
+.map-surge-active .replay-event {
+  animation-duration: 2s;
+}
+
+.floating-alert {
+  opacity: 0;
+  transform: translateX(12px);
+  animation: alert-float 5.2s ease-in-out infinite;
+}
+
+.map-surge-active .floating-alert {
+  animation-duration: 2.4s;
+}
+
+.risk-road-glow.surge {
+  animation-duration: 0.9s;
+  filter:
+    drop-shadow(0 0 10px currentColor)
+    drop-shadow(0 0 26px currentColor)
+    drop-shadow(0 0 48px rgba(248, 113, 113, 0.35));
+}
+
+.risk-road-halo.surge {
+  filter: blur(4px) drop-shadow(0 0 36px currentColor);
+}
+
+.risk-heat-field.surge {
+  animation-duration: 1.2s;
+}
+
+.risk-node-core.surge {
+  animation: node-alert 1.2s ease-in-out infinite;
+}
+
+.upload-scan-overlay {
+  background:
+    linear-gradient(180deg, transparent, rgba(125, 211, 252, 0.32), transparent),
+    linear-gradient(90deg, transparent, rgba(248, 113, 113, 0.18), transparent),
+    repeating-linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.08) 0,
+      rgba(255, 255, 255, 0.08) 1px,
+      transparent 1px,
+      transparent 5px
+    );
+  mix-blend-mode: screen;
+  animation: upload-scan 1.1s ease-in-out infinite;
+}
+
+.upload-scan-overlay::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 0%, rgba(255, 255, 255, 0.16) 48%, transparent 62%);
+  content: "";
+  animation: detection-sweep 1.45s ease-in-out infinite;
+}
+
+.hazard-highlight {
+  border: 1px solid rgba(248, 113, 113, 0.9);
+  background: rgba(248, 113, 113, 0.12);
+  box-shadow:
+    0 0 18px rgba(248, 113, 113, 0.6),
+    0 0 54px rgba(248, 113, 113, 0.28);
+  animation: hazard-lock 1.7s ease-in-out infinite;
+}
+
+.hazard-highlight::before,
+.hazard-highlight::after {
+  position: absolute;
+  inset: -8px;
+  border: 1px solid rgba(248, 113, 113, 0.32);
+  border-radius: inherit;
+  content: "";
+}
+
+.hazard-highlight::after {
+  inset: 12px;
+  border-color: rgba(255, 255, 255, 0.48);
+}
+
+.demo-floating-button {
+  animation: demo-control-breathe 4.4s ease-in-out infinite;
+}
+
+.india-node {
+  animation: india-network-pulse 2.6s ease-in-out infinite;
+}
+
+@keyframes road-flow {
+  0%,
+  100% {
+    stroke-opacity: 0.72;
+  }
+
+  50% {
+    stroke-opacity: 1;
+  }
+}
+
+@keyframes heat-breathe {
+  0%,
+  100% {
+    fill-opacity: 0.08;
+  }
+
+  50% {
+    fill-opacity: 0.18;
+  }
+}
+
+@keyframes weather-scan {
+  0%,
+  100% {
+    fill-opacity: 0.04;
+  }
+
+  50% {
+    fill-opacity: 0.11;
+  }
+}
+
+@keyframes anomaly-pulse {
+  0% {
+    opacity: 0.95;
+    transform: scale(0.74);
+  }
+
+  70% {
+    opacity: 0.22;
+    transform: scale(1.35);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.55);
+  }
+}
+
+@keyframes hero-node-float {
+  0%,
+  100% {
+    opacity: 0.2;
+    transform: translate3d(0, 0, 0) scale(0.8);
+  }
+
+  50% {
+    opacity: 0.85;
+    transform: translate3d(12px, -18px, 0) scale(1.25);
+  }
+}
+
+@keyframes panel-sweep {
+  0% {
+    transform: translateX(-85%);
+  }
+
+  55%,
+  100% {
+    transform: translateX(85%);
+  }
+}
+
+@keyframes haze-drift {
+  0%,
+  100% {
+    transform: translateX(-35%);
+  }
+
+  50% {
+    transform: translateX(35%);
+  }
+}
+
+@keyframes city-scan {
+  from {
+    background-position-y: 0;
+  }
+
+  to {
+    background-position-y: 80px;
+  }
+}
+
+@keyframes traffic-compression {
+  0%,
+  100% {
+    transform: translateX(-18px) scaleX(0.85);
+  }
+
+  50% {
+    transform: translateX(22px) scaleX(1.12);
+  }
+}
+
+@keyframes replay-flash {
+  0%,
+  100% {
+    opacity: 0.38;
+  }
+
+  40% {
+    color: #fecaca;
+    opacity: 1;
+    transform: translateX(5px);
+  }
+}
+
+@keyframes alert-float {
+  0%,
+  100% {
+    opacity: 0;
+    transform: translateX(14px) translateY(8px);
+  }
+
+  18%,
+  62% {
+    opacity: 1;
+    transform: translateX(0) translateY(0);
+  }
+}
+
+@keyframes node-alert {
+  0%,
+  100% {
+    opacity: 0.86;
+    r: 8;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes upload-scan {
+  0% {
+    transform: translateY(-100%);
+  }
+
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes hazard-lock {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.9);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes detection-sweep {
+  0% {
+    transform: translateX(-110%);
+  }
+
+  100% {
+    transform: translateX(110%);
+  }
+}
+
+@keyframes critical-breathe {
+  0%,
+  100% {
+    filter: brightness(1);
+    box-shadow:
+      0 0 24px rgba(248, 113, 113, 0.22),
+      inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  }
+
+  50% {
+    filter: brightness(1.12);
+    box-shadow:
+      0 0 34px rgba(248, 113, 113, 0.34),
+      0 0 58px rgba(248, 113, 113, 0.14),
+      inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  }
+}
+
+@keyframes demo-control-breathe {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+
+  50% {
+    filter: brightness(1.08);
+  }
+}
+
+@keyframes india-network-pulse {
+  0%,
+  100% {
+    opacity: 0.62;
+    transform: scale(0.82);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}

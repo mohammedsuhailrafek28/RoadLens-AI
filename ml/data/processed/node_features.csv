@@ -1,0 +1,6 @@
+segment_id,lat,lon,road_type,road_length,degree_centrality,intersection_density,speed_estimate,curvature_proxy,nearby_hazard_count,lighting_risk_proxy,rainfall_exposure_proxy
+anna-salai-junction,13.0444,80.2477,junction,640,0.25,0.0015625,28,0.13,2,8,8
+omr-school-zone,12.9416,80.2362,school-zone,920,0.5,0.002173913043478261,34,0.26,1,5,5
+velachery-flooding-belt,12.9791,80.2209,city-road,780,0.5,0.002564102564102564,31,0.26,1,5,9
+guindy-industrial-road,13.0067,80.2206,city-road,710,0.5,0.0028169014084507044,38,0.26,1,2,4
+ecr-beach-road,12.9519,80.2578,highway,1300,0.25,0.0007692307692307692,48,0.13,1,2,5

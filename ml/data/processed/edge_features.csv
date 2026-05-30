@@ -1,0 +1,5 @@
+source,target,adjacency_weight,corridor
+anna-salai-junction,guindy-industrial-road,0.82,anna-salai-junction->guindy-industrial-road
+omr-school-zone,velachery-flooding-belt,0.71,omr-school-zone->velachery-flooding-belt
+omr-school-zone,ecr-beach-road,0.54,omr-school-zone->ecr-beach-road
+velachery-flooding-belt,guindy-industrial-road,0.67,velachery-flooding-belt->guindy-industrial-road

@@ -1,0 +1,47 @@
+[
+  {
+    "segment_id": "anna-salai-junction",
+    "lat": 13.0444,
+    "lon": 80.2477,
+    "risk_label": "critical",
+    "risk_probability": 0.845,
+    "risk_class": "critical",
+    "confidence": 0.906
+  },
+  {
+    "segment_id": "omr-school-zone",
+    "lat": 12.9416,
+    "lon": 80.2362,
+    "risk_label": "high",
+    "risk_probability": 0.675,
+    "risk_class": "high",
+    "confidence": 0.868
+  },
+  {
+    "segment_id": "velachery-flooding-belt",
+    "lat": 12.9791,
+    "lon": 80.2209,
+    "risk_label": "high",
+    "risk_probability": 0.77,
+    "risk_class": "high",
+    "confidence": 0.889
+  },
+  {
+    "segment_id": "guindy-industrial-road",
+    "lat": 13.0067,
+    "lon": 80.2206,
+    "risk_label": "medium",
+    "risk_probability": 0.42,
+    "risk_class": "medium",
+    "confidence": 0.812
+  },
+  {
+    "segment_id": "ecr-beach-road",
+    "lat": 12.9519,
+    "lon": 80.2578,
+    "risk_label": "low",
+    "risk_probability": 0.3299999999999999,
+    "risk_class": "low",
+    "confidence": 0.793
+  }
+]

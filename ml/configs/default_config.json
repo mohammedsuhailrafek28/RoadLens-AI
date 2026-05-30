@@ -1,0 +1,26 @@
+{
+  "city": "Chennai, Tamil Nadu, India",
+  "fallback_center": {
+    "lat": 13.0444,
+    "lon": 80.2477
+  },
+  "risk_threshold": 0.65,
+  "random_seed": 42,
+  "graph": {
+    "network_type": "drive",
+    "fallback_segments": [
+      "anna-salai-junction",
+      "omr-school-zone",
+      "velachery-flooding-belt",
+      "guindy-industrial-road",
+      "ecr-beach-road"
+    ]
+  },
+  "training": {
+    "test_size": 0.25,
+    "epochs": 40,
+    "learning_rate": 0.001,
+    "hidden_dim": 64,
+    "dropout": 0.25
+  }
+}

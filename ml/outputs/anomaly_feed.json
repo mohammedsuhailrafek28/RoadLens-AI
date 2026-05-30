@@ -1,0 +1,42 @@
+[
+  {
+    "segment_id": "anna-salai-junction",
+    "lat": 13.0444,
+    "lon": 80.2477,
+    "anomaly_score": 0.5239412225476648,
+    "anomaly_label": 1,
+    "near_miss_probability": 1.0
+  },
+  {
+    "segment_id": "omr-school-zone",
+    "lat": 12.9416,
+    "lon": 80.2362,
+    "anomaly_score": 0.4128499839383635,
+    "anomaly_label": 0,
+    "near_miss_probability": 0.2
+  },
+  {
+    "segment_id": "velachery-flooding-belt",
+    "lat": 12.9791,
+    "lon": 80.2209,
+    "anomaly_score": 0.4394995907667285,
+    "anomaly_label": 0,
+    "near_miss_probability": 0.4
+  },
+  {
+    "segment_id": "guindy-industrial-road",
+    "lat": 13.0067,
+    "lon": 80.2206,
+    "anomaly_score": 0.4777273209081241,
+    "anomaly_label": 0,
+    "near_miss_probability": 0.6
+  },
+  {
+    "segment_id": "ecr-beach-road",
+    "lat": 12.9519,
+    "lon": 80.2578,
+    "anomaly_score": 0.5208291843875847,
+    "anomaly_label": 0,
+    "near_miss_probability": 0.8
+  }
+]

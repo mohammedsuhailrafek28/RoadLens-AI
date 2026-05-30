@@ -1,0 +1,6 @@
+segment_id,lat,lon,risk_label,risk_probability,risk_class,confidence
+anna-salai-junction,13.0444,80.2477,critical,0.845,critical,0.906
+omr-school-zone,12.9416,80.2362,high,0.675,high,0.868
+velachery-flooding-belt,12.9791,80.2209,high,0.77,high,0.889
+guindy-industrial-road,13.0067,80.2206,medium,0.42000000000000004,medium,0.812
+ecr-beach-road,12.9519,80.2578,low,0.32999999999999996,low,0.793

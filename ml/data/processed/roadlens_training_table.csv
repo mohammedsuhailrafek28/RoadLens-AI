@@ -1,0 +1,6 @@
+segment_id,lat,lon,road_type,road_length,degree_centrality,intersection_density,speed_estimate,curvature_proxy,nearby_hazard_count,lighting_risk_proxy,rainfall_exposure_proxy,braking_density,swerve_density,near_miss_count,hazard_density,pothole_severity,rainfall_intensity,visibility_score,lighting_risk,traffic_compression,accident_count,risk_label,timestamp,severity_label
+anna-salai-junction,13.0444,80.2477,junction,640,0.25,0.0015625,28,0.13,2,8,8,9,7,2,8,9,8,6,8,9,8,critical,2026-05-30T16:45:00,3
+omr-school-zone,12.9416,80.2362,school-zone,920,0.5,0.0021739130434782,34,0.26,1,5,5,8,6,1,6,7,6,5,5,8,5,high,2026-05-30T15:30:00,2
+velachery-flooding-belt,12.9791,80.2209,city-road,780,0.5,0.0025641025641025,31,0.26,1,5,9,7,5,1,8,8,9,5,9,6,5,high,2026-05-30T18:30:00,2
+guindy-industrial-road,13.0067,80.2206,city-road,710,0.5,0.0028169014084507,38,0.26,1,2,4,4,3,0,4,5,4,2,4,5,2,medium,2026-05-30T20:00:00,1
+ecr-beach-road,12.9519,80.2578,highway,1300,0.25,0.0007692307692307,48,0.13,1,2,5,3,2,0,2,3,4,2,5,3,1,low,2026-05-30T21:30:00,0

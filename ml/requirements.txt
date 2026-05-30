@@ -1,0 +1,30 @@
+# Core numeric stack
+numpy>=1.26
+pandas>=2.2
+scikit-learn>=1.4
+imbalanced-learn>=0.12
+
+# Graph and geospatial stack
+torch>=2.2
+torch-geometric>=2.5
+torch-geometric-temporal>=0.54
+networkx>=3.2
+geopandas>=0.14
+osmnx>=1.9
+
+# Modeling and anomaly detection
+xgboost>=2.0
+pyod>=1.1
+shap>=0.45
+interpret>=0.6
+ultralytics>=8.2
+
+# Experiment tracking and visualization
+mlflow>=2.12
+matplotlib>=3.8
+seaborn>=0.13
+
+# Optional inference service
+fastapi>=0.111
+uvicorn>=0.30
+python-dotenv>=1.0
