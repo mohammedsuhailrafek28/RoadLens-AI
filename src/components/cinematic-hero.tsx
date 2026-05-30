@@ -47,21 +47,20 @@ export function CinematicHero({ onEnter }: CinematicHeroProps) {
               <Radar className="size-3.5" />
               Predictive city intelligence online
             </div>
-            <h1 className="max-w-5xl font-heading text-5xl font-semibold leading-[1.02] tracking-[-0.02em] text-white sm:text-6xl lg:text-7xl">
-              Roads should not require fatalities before being classified as dangerous.
+            <h1 className="max-w-5xl font-heading text-6xl font-semibold leading-[0.95] tracking-[-0.02em] text-white sm:text-7xl lg:text-8xl">
+              RoadLens AI
             </h1>
-            <div className="mt-8">
+            <div className="mt-7">
               <p className="font-heading text-3xl font-semibold text-cyan-100 sm:text-4xl">
-                RoadLens AI
+                Predictive Road Intelligence
               </p>
-              <p className="mt-2 font-mono text-sm uppercase tracking-[0.28em] text-slate-400">
-                Predictive Near-Miss Intelligence Infrastructure
+              <p className="mt-3 max-w-xl font-mono text-sm uppercase tracking-[0.22em] text-slate-300">
+                Detecting invisible road danger before accidents happen.
               </p>
             </div>
-            <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-300">
-              RoadLens AI identifies invisible danger zones before major accidents occur
-              using collective braking memory, anomaly detection, explainable AI, and
-              temporal risk forecasting.
+            <p className="mt-7 max-w-2xl text-base leading-8 text-slate-300 sm:text-lg">
+              Built on collective braking memory, anomaly detection, explainable AI,
+              and temporal risk forecasting for smart-city road safety teams.
             </p>
             <motion.button
               whileHover={{ scale: 1.025 }}
@@ -134,6 +133,9 @@ function ImpactAndExpansionSection() {
           <p className="mt-5 text-base leading-8 text-slate-300">
             A 2-minute earlier intervention can prevent cascading collisions, emergency
             delays, and infrastructure stress escalation.
+          </p>
+          <p className="mt-6 border-t border-cyan-100/10 pt-5 font-mono text-xs uppercase tracking-[0.2em] text-slate-400">
+            Philosophy: Roads should not require fatalities before being classified as dangerous.
           </p>
         </div>
 
