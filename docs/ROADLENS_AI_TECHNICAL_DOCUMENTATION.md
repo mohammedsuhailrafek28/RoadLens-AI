@@ -948,3 +948,114 @@ This lets authorities act before the accident dataset grows. That is the product
 - `GET /api/roads/risk-map`: returns all scored road segments.
 - `POST /api/risk/calculate`: returns `82%` for Anna Salai Junction baseline.
 - `POST /api/hazards/report`: returns simulated AI hazard analysis.
+
+## RoadWatch Governance Hardening
+
+RoadLens AI now supports the RoadWatch governance requirement through a Transparent Authority Escalation Layer. The goal is not to turn the system into a complaint portal; the goal is to make predictive infrastructure risk accountable.
+
+### RoadWatch Capabilities
+
+1. AI-assisted road hazard reporting.
+2. Predictive infrastructure risk scoring.
+3. Transparent authority escalation.
+4. Public audit trail for road issues.
+5. Infrastructure transparency index.
+6. Evidence-backed authority priority queue.
+
+### Demo Scenario Hardening
+
+The dashboard now includes a high-visibility `Run Demo Scenario` flow. When active, the system enters `DEMO SCENARIO ACTIVE - Evening Rain Surge` for roughly 45 seconds.
+
+Visible effects:
+
+- risk score increases materially
+- map heat fields intensify
+- anomaly pulse intensity increases
+- rain/fog overlays become stronger
+- chaos window messaging switches to active escalation
+- authority queue priority text changes
+- road stress score increases
+- audit trail contributions increase
+- near-miss timeline receives new demo events
+
+A `Reset Scenario` button restores the baseline state for repeatable judging.
+
+### Hazard Image Relevance Check
+
+The upload flow no longer assigns high confidence to every image. It now classifies uploads into:
+
+- `road_surface`
+- `road_scene`
+- `document_or_notes`
+- `person_or_selfie`
+- `indoor_object`
+- `unknown`
+
+Only `road_surface` and `road_scene` uploads escalate dashboard risk. Irrelevant uploads return low confidence, explain the rejection, and do not modify road stress or authority priority.
+
+Frontend fallback logic uses filename/category heuristics so the demo remains credible even without the heavier backend. The Render backend adds image texture and edge analysis through Pillow and NumPy.
+
+### Vercel + Render Architecture
+
+```text
+Vercel Frontend + Next.js APIs
+        |
+        | NEXT_PUBLIC_ROADLENS_BACKEND_URL
+        v
+Render FastAPI Backend
+        |
+        |-- /health
+        |-- /analyze-hazard-image
+        |-- /authority/escalate
+        |-- /authority/queue
+        |-- /transparency/:reportId
+```
+
+Vercel continues to host the stable RoadLens dashboard, ML artifact adapter, and lightweight API routes. Render is intended for heavier image analysis and governance service endpoints. If the Render URL is missing or unavailable, the frontend falls back to local demo-safe relevance logic.
+
+### Authority Escalation Flow
+
+The dashboard includes an `Escalate to Authority` action. It generates:
+
+- escalation ID
+- assigned authority
+- priority
+- recommended SLA
+- current status
+- public transparency timeline
+
+Example output:
+
+```text
+Report ID: RL-CHN-2026-0421
+Assigned: Chennai Smart Mobility Cell
+Secondary: Greater Chennai Corporation / Traffic Police
+Priority: Critical Infrastructure Risk
+SLA: Inspection recommended within 4 hours
+Status: Generated / Pending Review
+```
+
+### Public Transparency Report
+
+The public report modal shows:
+
+- road segment
+- risk score
+- risk explanation
+- escalation status
+- assigned authority
+- recommended action
+- transparency timeline
+
+This satisfies the RoadWatch need for infrastructure transparency without adding authentication or a large complaint-management system.
+
+### Backend Validation
+
+Backend validation performed locally:
+
+- Python syntax compile passed.
+- FastAPI service started with Uvicorn.
+- `GET /health` returned service status.
+- road-like upload returned `accepted: true`.
+- notes/document upload returned `accepted: false`.
+- `POST /authority/escalate` returned an escalation ID and transparency timeline.

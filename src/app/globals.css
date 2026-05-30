@@ -248,6 +248,17 @@ textarea {
     radial-gradient(circle at 72% 28%, rgba(56, 189, 248, 0.12), transparent 32%);
 }
 
+.demo-scenario-shell {
+  background:
+    radial-gradient(circle at 32% 18%, rgba(248, 113, 113, 0.3), transparent 36%),
+    radial-gradient(circle at 72% 28%, rgba(56, 189, 248, 0.2), transparent 32%),
+    linear-gradient(180deg, rgba(127, 29, 29, 0.18), transparent 34%);
+}
+
+.demo-active-banner {
+  animation: demo-banner-alert 1.25s ease-in-out infinite;
+}
+
 .surge-command {
   position: relative;
   overflow: hidden;
@@ -282,6 +293,11 @@ textarea {
   animation-duration: 3.6s;
 }
 
+.map-demo-active .visibility-haze {
+  opacity: 0.9;
+  animation-duration: 1.7s;
+}
+
 .city-scan {
   background: repeating-linear-gradient(
     to bottom,
@@ -306,6 +322,12 @@ textarea {
   animation-duration: 1.5s;
 }
 
+.map-demo-active .traffic-compression {
+  opacity: 1;
+  animation-duration: 0.85s;
+  filter: blur(10px) drop-shadow(0 0 24px rgba(248, 113, 113, 0.45));
+}
+
 .temporal-replay {
   box-shadow: 0 0 32px rgba(56, 189, 248, 0.08);
 }
@@ -320,6 +342,10 @@ textarea {
   animation-duration: 2s;
 }
 
+.map-demo-active .replay-event {
+  animation-duration: 0.9s;
+}
+
 .floating-alert {
   opacity: 0;
   transform: translateX(12px);
@@ -328,6 +354,12 @@ textarea {
 
 .map-surge-active .floating-alert {
   animation-duration: 2.4s;
+}
+
+.map-demo-active .floating-alert {
+  border-color: rgba(254, 202, 202, 0.48);
+  background: rgba(239, 68, 68, 0.24);
+  animation-duration: 1.25s;
 }
 
 .risk-road-glow.surge {
@@ -348,6 +380,14 @@ textarea {
 
 .risk-node-core.surge {
   animation: node-alert 1.2s ease-in-out infinite;
+}
+
+.map-demo-active .risk-road-glow.surge {
+  animation-duration: 0.48s;
+}
+
+.map-demo-active .risk-heat-field.surge {
+  animation-duration: 0.62s;
 }
 
 .upload-scan-overlay {
@@ -608,6 +648,19 @@ textarea {
 
   50% {
     filter: brightness(1.08);
+  }
+}
+
+@keyframes demo-banner-alert {
+  0%,
+  100% {
+    filter: brightness(1);
+    transform: translateY(0);
+  }
+
+  50% {
+    filter: brightness(1.18);
+    transform: translateY(1px);
   }
 }
 

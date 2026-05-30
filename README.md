@@ -1,36 +1,61 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# RoadLens AI
 
-## Getting Started
+Predictive Near-Miss Intelligence Infrastructure for road-risk forecasting, anomaly visualization, ML artifact integration, and RoadWatch-style governance transparency.
 
-First, run the development server:
+Live demo: https://roadlens-ai.vercel.app
+
+## Frontend
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+corepack pnpm install
+corepack pnpm dev
+corepack pnpm lint
+corepack pnpm build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The Next.js app runs the cinematic dashboard, Leaflet risk map, ML output adapter, hazard upload flow, authority queue, and public RoadWatch transparency panel.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## ML Workspace
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+python -m ml.run_pipeline
+```
 
-## Learn More
+The `/ml` workspace exports dashboard-ready artifacts into `ml/outputs`. The Next.js app reads those artifacts through `src/lib/ml-output-adapter.ts` and falls back to demo data if artifacts are unavailable.
 
-To learn more about Next.js, take a look at the following resources:
+## Backend Service
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The optional `/backend` service is a FastAPI app intended for Render deployment. It provides:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- image relevance checking
+- hazard image analysis
+- authority escalation
+- public transparency timelines
 
-## Deploy on Vercel
+Local run:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+cd backend
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8000
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Set this in the frontend when the backend is deployed:
+
+```env
+NEXT_PUBLIC_ROADLENS_BACKEND_URL=https://your-roadlens-backend.onrender.com
+```
+
+If the backend URL is missing or unavailable, the frontend uses a local relevance fallback so unrelated notes/selfies/indoor images are rejected instead of receiving fake high-confidence hazard scores.
+
+## RoadWatch Governance
+
+RoadLens AI supports RoadWatch by showing:
+
+- how hazards are detected
+- how risks are predicted
+- how authorities are notified
+- how public transparency is maintained
+- how infrastructure issues are prioritized
+
+The `Run Demo Scenario` button visibly activates the Evening Rain Surge state. `Reset Scenario` restores the baseline for repeatable demos.

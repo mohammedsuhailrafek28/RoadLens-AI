@@ -12,6 +12,7 @@ import {
   Clock3,
   CloudRain,
   Construction,
+  FileText,
   FlaskConical,
   GitBranch,
   MapPinned,
@@ -59,6 +60,36 @@ const levelLabel: Record<RiskLevel, string> = {
   critical: "Critical Risk",
 };
 
+type RelevanceCategory =
+  | "road_surface"
+  | "road_scene"
+  | "document_or_notes"
+  | "person_or_selfie"
+  | "indoor_object"
+  | "unknown";
+
+type TransparencyEvent = {
+  time: string;
+  event: string;
+};
+
+type EscalationRecord = {
+  escalationId: string;
+  department: string;
+  secondaryDepartment: string;
+  priority: string;
+  status: string;
+  recommendedSla: string;
+  timestamp: string;
+};
+
+const defaultTransparencyEvents: TransparencyEvent[] = [
+  { time: "4:05 PM", event: "braking anomaly detected" },
+  { time: "4:31 PM", event: "road risk escalated" },
+  { time: "4:42 PM", event: "authority notification ready" },
+  { time: "4:51 PM", event: "public transparency record prepared" },
+];
+
 export function RoadLensDashboard() {
   const [selectedRoadId, setSelectedRoadId] = useState("anna-salai-junction");
   const [uploadedHazard, setUploadedHazard] = useState(false);
@@ -67,6 +98,7 @@ export function RoadLensDashboard() {
   const [weatherStatus, setWeatherStatus] = useState("weather sync pending");
   const [refreshToken, setRefreshToken] = useState(0);
   const [rainSurgeActive, setRainSurgeActive] = useState(false);
+  const [demoMode, setDemoMode] = useState(false);
   const [mlGeneratedAt, setMlGeneratedAt] = useState("pending");
   const [mlRoads, setMlRoads] = useState<Array<ReturnType<typeof getRoadWithRisk>> | null>(null);
   const [mlAnomalies, setMlAnomalies] = useState(brakingAnomalies);
@@ -74,8 +106,12 @@ export function RoadLensDashboard() {
   const [mlFallbackUsed, setMlFallbackUsed] = useState(true);
   const [isRefreshingMl, setIsRefreshingMl] = useState(false);
   const [soundMuted, setSoundMuted] = useState(false);
+  const [escalation, setEscalation] = useState<EscalationRecord | null>(null);
+  const [transparencyEvents, setTransparencyEvents] = useState<TransparencyEvent[]>(defaultTransparencyEvents);
+  const [publicReportOpen, setPublicReportOpen] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
-  const extraSeverity = (uploadedHazard ? 1 : 0) + (rainSurgeActive ? 1 : 0);
+  const surgeBoost = demoMode ? 4 : rainSurgeActive ? 2 : 0;
+  const extraSeverity = (uploadedHazard ? 1 : 0) + surgeBoost;
   const selectedRoad =
     mlRoads?.find((road) => road.id === selectedRoadId) ?? getRoadWithRisk(selectedRoadId, extraSeverity);
   const analytics = getAuthorityAnalytics(extraSeverity);
@@ -177,27 +213,78 @@ export function RoadLensDashboard() {
   }, [soundMuted]);
 
   function runDemoScenario() {
+    const event: TransparencyEvent = {
+      time: "Now",
+      event: "DEMO SCENARIO ACTIVE - Evening Rain Surge",
+    };
+    setDemoMode(true);
     setRainSurgeActive(true);
     setUploadedHazard(true);
     setSelectedRoadId("anna-salai-junction");
-    setUploadTelemetry("demo scenario: rain surge, anomaly pressure, authority escalation");
+    setUploadTelemetry("DEMO SCENARIO ACTIVE - Evening Rain Surge");
+    setTransparencyEvents((events) => [event, ...events].slice(0, 7));
     setRefreshToken((token) => token + 1);
     playSystemTone("surge");
     window.setTimeout(() => playSystemTone("ping"), 420);
     window.setTimeout(() => playSystemTone("tick"), 760);
+    window.setTimeout(() => {
+      setDemoMode(false);
+      setRainSurgeActive(false);
+    }, 45000);
+  }
+
+  function resetDemoScenario() {
+    setDemoMode(false);
+    setRainSurgeActive(false);
+    setUploadedHazard(false);
+    setUploadTelemetry("scenario reset - surface intelligence standby");
+    setTransparencyEvents(defaultTransparencyEvents);
+  }
+
+  async function escalateToAuthority() {
+    const fallbackRecord = createLocalEscalation(selectedRoad.name, selectedRoad.risk.riskLevel);
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_ROADLENS_BACKEND_URL;
+      if (backendUrl) {
+        const response = await fetch(`${backendUrl}/authority/escalate`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            roadSegment: selectedRoad.name,
+            riskLevel: selectedRoad.risk.riskLevel,
+            hazardType: uploadedHazard ? "surface degradation" : "behavioral anomaly cluster",
+          }),
+        });
+        if (response.ok) {
+          const record = await response.json();
+          const normalized = normalizeEscalation(record);
+          setEscalation(normalized);
+          setTransparencyEvents(record.timeline ?? escalationTimeline(normalized.escalationId));
+          setUploadTelemetry(`authority escalation generated - ${normalized.escalationId}`);
+          return;
+        }
+      }
+    } catch {
+      // Keep the governance flow demo-safe even when the external service is unavailable.
+    }
+
+    setEscalation(fallbackRecord);
+    setTransparencyEvents(escalationTimeline(fallbackRecord.escalationId));
+    setUploadTelemetry(`authority escalation generated - ${fallbackRecord.escalationId}`);
   }
 
   useEffect(() => {
     if (!rainSurgeActive || soundMuted) return;
-    const interval = window.setInterval(() => playSystemTone("tick"), 3400);
+    const interval = window.setInterval(() => playSystemTone("tick"), demoMode ? 1550 : 3400);
     return () => window.clearInterval(interval);
-  }, [playSystemTone, rainSurgeActive, soundMuted]);
+  }, [demoMode, playSystemTone, rainSurgeActive, soundMuted]);
 
   return (
     <main
       className={cn(
         "min-h-screen overflow-hidden px-4 py-4 text-slate-100 sm:px-6 lg:px-8",
         rainSurgeActive && "rain-surge-shell",
+        demoMode && "demo-scenario-shell",
       )}
     >
       <div className="telemetry-grid fixed inset-0 -z-10 opacity-40" />
@@ -220,6 +307,15 @@ export function RoadLensDashboard() {
         </button>
       </div>
       <div className="mx-auto flex max-w-[1720px] flex-col gap-4">
+        {demoMode ? (
+          <motion.section
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="demo-active-banner rounded-lg border border-red-200/50 bg-red-500/20 px-4 py-3 text-center font-mono text-xs font-semibold uppercase tracking-[0.22em] text-red-50 shadow-[0_0_52px_rgba(248,113,113,0.28)]"
+          >
+            DEMO SCENARIO ACTIVE - Evening Rain Surge
+          </motion.section>
+        ) : null}
         <header className="grid gap-5 border-b border-cyan-100/10 pb-5 xl:grid-cols-[1.08fr_1.42fr]">
           <motion.section
             initial={{ opacity: 0, y: 18 }}
@@ -248,8 +344,8 @@ export function RoadLensDashboard() {
 
           <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
             <MetricCard icon={ShieldAlert} label="High-risk zones" value={analytics.totalHighRiskZones} tone="red" />
-            <MetricCard icon={Radar} label="Near-miss pulses" value={brakingAnomalies.length} tone="cyan" />
-            <MetricCard icon={Construction} label="Pending repairs" value={analytics.pendingRepairs} tone="amber" />
+            <MetricCard icon={Radar} label="Near-miss pulses" value={brakingAnomalies.length + (demoMode ? 9 : 0)} tone="cyan" />
+            <MetricCard icon={Construction} label="Pending repairs" value={analytics.pendingRepairs + (demoMode ? 3 : 0)} tone="amber" />
             <MetricCard icon={CheckCircle2} label="Resolved reports" value={analytics.resolvedReports} tone="green" />
           </section>
         </header>
@@ -265,7 +361,7 @@ export function RoadLensDashboard() {
             <span>{uploadTelemetry}</span>
           </div>
           <div className="font-mono text-xs uppercase tracking-[0.18em] text-red-200">
-            {rainSurgeActive ? "evening rain surge active" : "danger escalation transitions active"}
+            {demoMode ? "DEMO SCENARIO ACTIVE - Evening Rain Surge" : rainSurgeActive ? "evening rain surge active" : "danger escalation transitions active"}
           </div>
         </section>
 
@@ -291,6 +387,7 @@ export function RoadLensDashboard() {
             type="button"
             onClick={() => {
               setRainSurgeActive((active) => !active);
+              setDemoMode((active) => !active);
               setUploadedHazard(true);
               setSelectedRoadId("anna-salai-junction");
               setRefreshToken((token) => token + 1);
@@ -304,6 +401,13 @@ export function RoadLensDashboard() {
           >
             <CloudRain className="size-4" />
             {rainSurgeActive ? "Stabilize City" : "Trigger Rain Surge"}
+          </button>
+          <button
+            type="button"
+            onClick={resetDemoScenario}
+            className="inline-flex h-11 items-center gap-2 rounded-md border border-cyan-200/20 bg-slate-950/70 px-4 font-heading text-sm font-semibold text-cyan-100 transition hover:bg-cyan-200 hover:text-slate-950"
+          >
+            Reset Scenario
           </button>
         </section>
 
@@ -324,6 +428,7 @@ export function RoadLensDashboard() {
                   selectedRoadId={selectedRoadId}
                   extraSeverity={extraSeverity}
                   rainSurgeActive={rainSurgeActive}
+                  demoMode={demoMode}
                   onSelectRoad={setSelectedRoadId}
                 />
               </div>
@@ -334,6 +439,7 @@ export function RoadLensDashboard() {
               uploadedHazard={uploadedHazard}
               selectedAnomalies={selectedAnomalies}
               rainSurgeActive={rainSurgeActive}
+              demoMode={demoMode}
             />
           </div>
 
@@ -342,18 +448,24 @@ export function RoadLensDashboard() {
               anomalies={mlAnomalies}
               selectedRoadId={selectedRoadId}
               rainSurgeActive={rainSurgeActive}
+              demoMode={demoMode}
               uploadedHazard={uploadedHazard}
               onSelectRoad={setSelectedRoadId}
             />
-            <ChaosWindowPanel selectedRoad={selectedRoad} rainSurgeActive={rainSurgeActive} />
-            <RiskAuditTrail factors={selectedRoad.risk.auditTrail} confidence={selectedRoad.risk.confidence} />
+            <ChaosWindowPanel selectedRoad={selectedRoad} rainSurgeActive={rainSurgeActive} demoMode={demoMode} />
+            <RiskAuditTrail factors={selectedRoad.risk.auditTrail} confidence={selectedRoad.risk.confidence} demoMode={demoMode} />
             <ResearchScorecardPanel />
-            <RoadStressPanel selectedRoad={selectedRoad} rainSurgeActive={rainSurgeActive} />
+            <RoadStressPanel selectedRoad={selectedRoad} rainSurgeActive={rainSurgeActive} demoMode={demoMode} />
             <HazardUpload
               uploadedHazard={uploadedHazard}
               onTelemetry={setUploadTelemetry}
             onAnalyze={async (analysis) => {
                 playSystemTone("scan");
+                if (!analysis.accepted) {
+                  setUploadedHazard(false);
+                  setUploadTelemetry(`${analysis.relevance} rejected - no risk escalation`);
+                  return;
+                }
                 const response = await fetch("/api/hazards/report", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
@@ -379,8 +491,16 @@ export function RoadLensDashboard() {
             <AuthorityDashboard
               roads={roadCards}
               rainSurgeActive={rainSurgeActive}
+              demoMode={demoMode}
               uploadedHazard={uploadedHazard}
               uploadTelemetry={uploadTelemetry}
+            />
+            <RoadWatchGovernancePanel
+              selectedRoad={selectedRoad}
+              escalation={escalation}
+              transparencyEvents={transparencyEvents}
+              onEscalate={escalateToAuthority}
+              onOpenReport={() => setPublicReportOpen(true)}
             />
           </aside>
         </section>
@@ -389,6 +509,14 @@ export function RoadLensDashboard() {
           <span>RoadLens AI v0.9 Prototype - ML Intelligence Layer Connected</span>
         </footer>
       </div>
+      {publicReportOpen ? (
+        <PublicReportModal
+          selectedRoad={selectedRoad}
+          escalation={escalation}
+          transparencyEvents={transparencyEvents}
+          onClose={() => setPublicReportOpen(false)}
+        />
+      ) : null}
     </main>
   );
 }
@@ -519,15 +647,18 @@ function RoadDetailPanel({
   uploadedHazard,
   selectedAnomalies,
   rainSurgeActive,
+  demoMode,
 }: {
   selectedRoad: ReturnType<typeof getRoadWithRisk>;
   uploadedHazard: boolean;
   selectedAnomalies: typeof brakingAnomalies;
   rainSurgeActive: boolean;
+  demoMode: boolean;
 }) {
   const color = riskColor(selectedRoad.risk.riskLevel);
+  const displayedRisk = Math.min(99, selectedRoad.risk.riskScore + (demoMode ? 10 : 0));
   const criticalSurge =
-    rainSurgeActive && (selectedRoad.risk.riskLevel === "critical" || selectedRoad.risk.riskScore >= 80);
+    rainSurgeActive && (selectedRoad.risk.riskLevel === "critical" || displayedRisk >= 80);
   const hazards =
     uploadedHazard && selectedRoad.id === "anna-salai-junction"
       ? [
@@ -562,7 +693,7 @@ function RoadDetailPanel({
           )}
           style={{ backgroundColor: color }}
         >
-          <div className="text-2xl font-semibold">{selectedRoad.risk.riskScore}%</div>
+          <div className="text-2xl font-semibold">{displayedRisk}%</div>
           <div className="text-xs font-semibold uppercase">{selectedRoad.risk.riskLevel}</div>
         </div>
       </div>
@@ -579,7 +710,7 @@ function RoadDetailPanel({
         <Factor icon={CloudRain} label="Weather" value="Rain escalation" />
         <Factor icon={Moon} label="Lighting" value={selectedRoad.lightingCondition} />
         <Factor icon={Clock3} label="Chaos window" value={selectedRoad.risk.chaosWindow.window} />
-        <Factor icon={Radar} label="Anomaly count" value={`${selectedAnomalies.length} live pulses`} />
+        <Factor icon={Radar} label="Anomaly count" value={`${selectedAnomalies.length + (demoMode ? 8 : 0)} live pulses`} />
       </div>
 
       <div className="mt-5">
@@ -620,19 +751,21 @@ function BehavioralAnomalyPanel({
   anomalies,
   selectedRoadId,
   rainSurgeActive,
+  demoMode,
   uploadedHazard,
   onSelectRoad,
 }: {
   anomalies: typeof brakingAnomalies;
   selectedRoadId: string;
   rainSurgeActive: boolean;
+  demoMode: boolean;
   uploadedHazard: boolean;
   onSelectRoad: (id: string) => void;
 }) {
   return (
     <section className={cn("glass-panel intelligence-panel rounded-lg p-4", rainSurgeActive && "surge")}>
       <PanelHeader icon={Activity} title="Collective Braking Memory" subtitle="Behavioral Anomaly Intelligence" />
-      <NearMissTimeline rainSurgeActive={rainSurgeActive} />
+      <NearMissTimeline rainSurgeActive={rainSurgeActive} demoMode={demoMode} />
       <div className="mt-4 space-y-2">
         {anomalies.map((anomaly, index) => {
           const road = roadSegments.find((segment) => segment.id === anomaly.roadSegmentId);
@@ -665,7 +798,7 @@ function BehavioralAnomalyPanel({
               </span>
               <span className="text-right">
                 <span className="block text-sm font-semibold text-red-200">
-                  {anomaly.intensity + (rainSurgeActive ? 12 : 0) + (uploadedHazard ? 6 : 0)}
+                  {anomaly.intensity + (demoMode ? 28 : rainSurgeActive ? 12 : 0) + (uploadedHazard ? 6 : 0)}
                 </span>
                 <span className="block text-xs text-slate-500">{anomaly.observedAt}</span>
               </span>
@@ -677,7 +810,7 @@ function BehavioralAnomalyPanel({
   );
 }
 
-function NearMissTimeline({ rainSurgeActive }: { rainSurgeActive: boolean }) {
+function NearMissTimeline({ rainSurgeActive, demoMode }: { rainSurgeActive: boolean; demoMode: boolean }) {
   const events = [
     ["4:05 PM", "abnormal braking spike"],
     ["4:18 PM", "swerve density increase"],
@@ -685,6 +818,13 @@ function NearMissTimeline({ rainSurgeActive }: { rainSurgeActive: boolean }) {
     ["4:42 PM", "risk jumps to 82%"],
     ["4:51 PM", "chaos window triggered"],
   ];
+  const demoEvents = demoMode
+    ? [
+        ["Now", "DEMO rain surge activated"],
+        ["+08s", "braking density doubled"],
+        ["+18s", "authority priority shifted to critical"],
+      ]
+    : [];
 
   return (
     <div className="mt-4 rounded-lg border border-red-300/15 bg-black/25 p-3">
@@ -692,7 +832,7 @@ function NearMissTimeline({ rainSurgeActive }: { rainSurgeActive: boolean }) {
         Near-Miss Emergence Timeline
       </div>
       <div className="mt-3 space-y-2">
-        {events.map(([time, label], index) => (
+        {[...demoEvents, ...events].map(([time, label], index) => (
           <motion.div
             key={label}
             initial={{ opacity: 0.55, x: -8 }}
@@ -718,9 +858,11 @@ function NearMissTimeline({ rainSurgeActive }: { rainSurgeActive: boolean }) {
 function ChaosWindowPanel({
   selectedRoad,
   rainSurgeActive,
+  demoMode,
 }: {
   selectedRoad: ReturnType<typeof getRoadWithRisk>;
   rainSurgeActive: boolean;
+  demoMode: boolean;
 }) {
   const maxRisk = Math.max(...temporalRiskSeries.map((point) => point.risk));
 
@@ -728,7 +870,9 @@ function ChaosWindowPanel({
     <section className={cn("glass-panel intelligence-panel rounded-lg p-4", rainSurgeActive && "surge")}>
       <PanelHeader icon={Clock3} title="Chaos Window Forecasting" subtitle={selectedRoad.risk.chaosWindow.window} />
       <p className="mt-3 text-sm leading-6 text-slate-300">
-        Risk spike expected due to rain, traffic compression, poor lighting, and braking anomalies.
+        {demoMode
+          ? "Chaos window active now: rain surge, visibility loss, traffic compression, and braking anomalies are escalating together."
+          : "Risk spike expected due to rain, traffic compression, poor lighting, and braking anomalies."}
       </p>
       <div className="mt-4 flex h-28 items-end gap-2 rounded-lg border border-cyan-100/10 bg-slate-950/60 p-3">
         {temporalRiskSeries.map((point) => (
@@ -738,7 +882,7 @@ function ChaosWindowPanel({
               animate={{
                 height: `${Math.max(
                   12,
-                  ((point.risk + (rainSurgeActive ? 10 : 0)) / (maxRisk + 10)) * 82,
+                  ((point.risk + (demoMode ? 22 : rainSurgeActive ? 10 : 0)) / (maxRisk + 22)) * 82,
                 )}px`,
               }}
               className="w-full rounded-t-sm bg-gradient-to-t from-red-500 via-amber-300 to-cyan-200 shadow-[0_0_18px_rgba(248,113,113,0.35)]"
@@ -758,19 +902,19 @@ function ChaosWindowPanel({
   );
 }
 
-function RiskAuditTrail({ factors, confidence }: { factors: AuditFactor[]; confidence: number }) {
+function RiskAuditTrail({ factors, confidence, demoMode }: { factors: AuditFactor[]; confidence: number; demoMode: boolean }) {
   return (
     <section className="glass-panel rounded-lg p-4">
-      <PanelHeader icon={GitBranch} title="Risk Audit Trail" subtitle={`${confidence}% model confidence`} />
+      <PanelHeader icon={GitBranch} title="Risk Audit Trail" subtitle={`${Math.min(97, confidence + (demoMode ? 4 : 0))}% model confidence`} />
       <div className="mt-4 space-y-3">
         {factors.map((factor) => (
           <div key={factor.label}>
             <div className="flex items-center justify-between text-sm">
               <span className="font-medium text-slate-200">{factor.label}</span>
-              <span className="text-slate-400">+{factor.impact}%</span>
+              <span className="text-slate-400">+{factor.impact + (demoMode ? 6 : 0)}%</span>
             </div>
             <div className="mt-1 h-2 overflow-hidden rounded-full bg-slate-800">
-              <div className={cn("h-full rounded-full", auditTone(factor.tone))} style={{ width: `${Math.min(100, factor.impact * 2.5)}%` }} />
+              <div className={cn("h-full rounded-full", auditTone(factor.tone))} style={{ width: `${Math.min(100, (factor.impact + (demoMode ? 6 : 0)) * 2.5)}%` }} />
             </div>
             <div className="mt-1 text-xs text-slate-500">{factor.confidence}% evidence confidence</div>
           </div>
@@ -815,9 +959,11 @@ function ScoreMetric({ label, value }: { label: string; value: string }) {
 function RoadStressPanel({
   selectedRoad,
   rainSurgeActive,
+  demoMode,
 }: {
   selectedRoad: ReturnType<typeof getRoadWithRisk>;
   rainSurgeActive: boolean;
+  demoMode: boolean;
 }) {
   return (
     <section className={cn("glass-panel intelligence-panel rounded-lg p-4", rainSurgeActive && "surge")}>
@@ -826,7 +972,7 @@ function RoadStressPanel({
         <div className="flex aspect-square items-center justify-center rounded-full border border-amber-200/20 bg-amber-400/10 shadow-[0_0_32px_rgba(251,191,36,0.16)]">
           <div className="text-center">
             <div className="text-3xl font-semibold text-amber-100">
-              {selectedRoad.risk.roadStress.score + (rainSurgeActive ? 7 : 0)}
+              {Math.min(100, selectedRoad.risk.roadStress.score + (demoMode ? 18 : rainSurgeActive ? 7 : 0))}
             </div>
             <div className="text-xs uppercase text-amber-200">{selectedRoad.risk.roadStress.level}</div>
           </div>
@@ -858,6 +1004,7 @@ function HazardUpload({
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [fileName, setFileName] = useState("No image selected");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [dragging, setDragging] = useState(false);
   const [status, setStatus] = useState<"idle" | "ready" | "analyzing" | "complete">(
     uploadedHazard ? "complete" : "idle",
@@ -873,6 +1020,7 @@ function HazardUpload({
     const reader = new FileReader();
     reader.onload = () => {
       const imageUrl = String(reader.result);
+      setSelectedFile(file);
       setPreviewUrl(imageUrl);
       setFileName(file.name);
       setStatus("ready");
@@ -901,20 +1049,10 @@ function HazardUpload({
       return;
     }
 
-    const nextAnalysis: UploadAnalysis = {
-      hazardType: "pothole",
-      label: "Severe pothole cluster",
-      description: "Severe pothole cluster detected near junction approach lane",
-      confidence: 92,
-      severity: 10,
-      riskAmplification: "+7% road stress escalation",
-      suggestedAction: "Immediate lane inspection recommended",
-      imageUrl: previewUrl,
-    };
-
     setStatus("analyzing");
-    onTelemetry("AI surface scan in progress");
+    onTelemetry("image relevance check in progress");
     await new Promise((resolve) => window.setTimeout(resolve, 1100));
+    const nextAnalysis = await analyzeUploadImage(selectedFile, previewUrl);
     setAnalysis(nextAnalysis);
     await onAnalyze(nextAnalysis);
     setStatus("complete");
@@ -978,7 +1116,7 @@ function HazardUpload({
             </span>
           )}
           {status === "analyzing" ? <span className="upload-scan-overlay absolute inset-0" /> : null}
-          {previewUrl ? (
+          {previewUrl && analysis?.accepted !== false ? (
             <>
               <span className="absolute inset-0 bg-[linear-gradient(135deg,rgba(14,165,233,0.16),transparent_42%),radial-gradient(circle_at_44%_50%,rgba(248,113,113,0.18),transparent_24%)]" />
               <span className="hazard-highlight absolute left-[36%] top-[42%] size-16 rounded-full" />
@@ -990,7 +1128,9 @@ function HazardUpload({
             <p className="truncate text-sm font-semibold text-slate-100">{fileName}</p>
             <p className="text-xs text-slate-500">
               {status === "complete"
-                ? "Analysis persisted and dashboard intelligence refreshed"
+                ? analysis?.accepted === false
+                  ? "Image rejected - no risk escalation applied"
+                  : "Analysis persisted and dashboard intelligence refreshed"
                 : status === "analyzing"
                   ? "AI scan running surface deformation checks"
                   : "Anna Salai Junction - surface hazard intake"}
@@ -1017,6 +1157,8 @@ function HazardUpload({
           "mt-4 rounded-lg border p-3 transition",
           uploadedHazard
             ? "border-red-300/30 bg-red-500/10"
+            : analysis?.accepted === false
+              ? "border-amber-300/30 bg-amber-500/10"
             : "border-slate-700/70 bg-slate-950/50",
         )}
       >
@@ -1026,7 +1168,9 @@ function HazardUpload({
         </div>
         <p className="mt-2 text-sm leading-6 text-slate-400">
           {analysis
-            ? `Detected: ${analysis.label}. Confidence ${analysis.confidence}%. Impact: ${analysis.riskAmplification}. ${analysis.suggestedAction}.`
+            ? analysis.accepted
+              ? `Accepted: ${analysis.relevance}. Detected: ${analysis.label}. Confidence ${analysis.confidence}%. Impact: +${analysis.riskAmplification}% road stress escalation. ${analysis.suggestedAction}.`
+              : `Image rejected / low relevance. ${analysis.message ?? analysis.reason} Confidence ${analysis.confidence}%. No dashboard risk escalation applied.`
             : uploadedHazard
               ? "Detected pothole severity 10/10. Risk impact increased and the stress score reinforces urgent repair."
             : "The simulated detector classifies hazard type, severity, risk impact, and suggested action."}
@@ -1035,7 +1179,7 @@ function HazardUpload({
           <div className="mt-3 grid grid-cols-3 gap-2">
             <AnalysisMetric label="severity" value={`${analysis.severity}/10`} />
             <AnalysisMetric label="confidence" value={`${analysis.confidence}%`} />
-            <AnalysisMetric label="impact" value="+7%" />
+            <AnalysisMetric label="impact" value={`+${analysis.riskAmplification}%`} />
           </div>
         ) : null}
       </div>
@@ -1044,15 +1188,126 @@ function HazardUpload({
 }
 
 type UploadAnalysis = {
+  accepted: boolean;
+  relevance: RelevanceCategory;
   hazardType: string;
   label: string;
   description: string;
   confidence: number;
   severity: number;
-  riskAmplification: string;
+  riskAmplification: number;
   suggestedAction: string;
   imageUrl: string;
+  message?: string;
+  reason?: string;
 };
+
+async function analyzeUploadImage(file: File | null, imageUrl: string): Promise<UploadAnalysis> {
+  const backendUrl = process.env.NEXT_PUBLIC_ROADLENS_BACKEND_URL;
+
+  if (backendUrl && file) {
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+      formData.append("roadSegmentId", "anna-salai-junction");
+      const response = await fetch(`${backendUrl}/analyze-hazard-image`, {
+        method: "POST",
+        body: formData,
+      });
+      if (response.ok) {
+        const result = await response.json();
+        return normalizeUploadAnalysis(result, imageUrl);
+      }
+    } catch {
+      // Fall through to local relevance logic.
+    }
+  }
+
+  return localImageRelevanceAnalysis(file, imageUrl);
+}
+
+function normalizeUploadAnalysis(result: Record<string, unknown>, imageUrl: string): UploadAnalysis {
+  const accepted = Boolean(result.accepted);
+  const relevance = String(result.relevance ?? "unknown") as RelevanceCategory;
+  const confidence = Math.round(Number(result.confidence ?? 0.2) * 100);
+  const hazardType = String(result.hazardType ?? (accepted ? "surface degradation" : "not_applicable"));
+
+  return {
+    accepted,
+    relevance,
+    hazardType,
+    label: accepted ? titleCase(hazardType) : "Low relevance image",
+    description: String(result.explanation ?? result.reason ?? "Road image relevance check completed."),
+    confidence,
+    severity: Number(result.severity ?? 0),
+    riskAmplification: Number(result.riskAmplification ?? 0),
+    suggestedAction: String(result.suggestedAction ?? "Upload a road surface image for hazard analysis."),
+    imageUrl,
+    message: String(result.message ?? result.explanation ?? ""),
+    reason: String(result.reason ?? ""),
+  };
+}
+
+function localImageRelevanceAnalysis(file: File | null, imageUrl: string): UploadAnalysis {
+  const name = file?.name.toLowerCase() ?? "";
+  const roadWords = ["road", "street", "pothole", "asphalt", "lane", "junction", "crack", "flood", "traffic", "surface"];
+  const documentWords = ["note", "notes", "paper", "document", "doc", "screenshot", "assignment", "page"];
+  const personWords = ["selfie", "person", "face", "portrait"];
+  const indoorWords = ["room", "desk", "table", "chair", "indoor", "laptop"];
+
+  if (documentWords.some((word) => name.includes(word))) {
+    return rejectedAnalysis("document_or_notes", 18, imageUrl, "Filename suggests notes, a document, or a screenshot.");
+  }
+  if (personWords.some((word) => name.includes(word))) {
+    return rejectedAnalysis("person_or_selfie", 21, imageUrl, "Filename suggests a person/selfie rather than road infrastructure.");
+  }
+  if (indoorWords.some((word) => name.includes(word))) {
+    return rejectedAnalysis("indoor_object", 24, imageUrl, "Filename suggests an indoor object or room.");
+  }
+  if (!roadWords.some((word) => name.includes(word))) {
+    return rejectedAnalysis("unknown", 34, imageUrl, "Local fallback could not verify road infrastructure context. Use a road/pothole/street filename or connect the Render backend for image texture checks.");
+  }
+
+  return {
+    accepted: true,
+    relevance: "road_surface",
+    hazardType: "surface degradation",
+    label: "Surface degradation",
+    description: "Road infrastructure context detected from upload metadata and demo relevance checks.",
+    confidence: 84,
+    severity: 8,
+    riskAmplification: 7,
+    suggestedAction: "Immediate lane-level inspection recommended",
+    imageUrl,
+    reason: "Filename matches road infrastructure terms.",
+  };
+}
+
+function rejectedAnalysis(
+  relevance: RelevanceCategory,
+  confidence: number,
+  imageUrl: string,
+  reason: string,
+): UploadAnalysis {
+  return {
+    accepted: false,
+    relevance,
+    hazardType: "not_applicable",
+    label: "Low relevance image",
+    description: reason,
+    confidence,
+    severity: 0,
+    riskAmplification: 0,
+    suggestedAction: "Upload a clear road surface or road scene image for hazard analysis.",
+    imageUrl,
+    message: "This image does not appear to show road infrastructure.",
+    reason,
+  };
+}
+
+function titleCase(value: string) {
+  return value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
 
 function AnalysisMetric({ label, value }: { label: string; value: string }) {
   return (
@@ -1072,11 +1327,13 @@ function AnalysisMetric({ label, value }: { label: string; value: string }) {
 function AuthorityDashboard({
   roads,
   rainSurgeActive,
+  demoMode,
   uploadedHazard,
   uploadTelemetry,
 }: {
   roads: Array<(typeof roadSegments)[number] & { risk: ReturnType<typeof calculateRisk> }>;
   rainSurgeActive: boolean;
+  demoMode: boolean;
   uploadedHazard: boolean;
   uploadTelemetry: string;
 }) {
@@ -1097,7 +1354,9 @@ function AuthorityDashboard({
               <span className="block text-sm font-semibold text-slate-100">{road.name}</span>
               <span className="block text-xs text-slate-500">
                 {rainSurgeActive && index === 0
-                  ? "Urgent rain-surge dispatch priority"
+                  ? demoMode
+                    ? "Critical demo surge - higher authority notification required"
+                    : "Urgent rain-surge dispatch priority"
                   : uploadedHazard && index === 0
                     ? "Surface hazard verified - lane inspection escalated"
                   : road.risk.recommendedAction}
@@ -1111,11 +1370,189 @@ function AuthorityDashboard({
       </div>
 
       <div className="mt-4 grid grid-cols-3 gap-2">
-        <Trend label="Reports" value={uploadedHazard ? "+19%" : "+18%"} />
+        <Trend label="Reports" value={demoMode ? "+31%" : uploadedHazard ? "+19%" : "+18%"} />
         <Trend label="Upload" value={uploadedHazard ? "AI" : "idle"} />
-        <Trend label="Signal" value={uploadTelemetry.includes("analyzed") ? "live" : "ready"} />
+        <Trend label="Signal" value={demoMode ? "surge" : uploadTelemetry.includes("analyzed") ? "live" : "ready"} />
       </div>
     </section>
+  );
+}
+
+function RoadWatchGovernancePanel({
+  selectedRoad,
+  escalation,
+  transparencyEvents,
+  onEscalate,
+  onOpenReport,
+}: {
+  selectedRoad: ReturnType<typeof getRoadWithRisk>;
+  escalation: EscalationRecord | null;
+  transparencyEvents: TransparencyEvent[];
+  onEscalate: () => void;
+  onOpenReport: () => void;
+}) {
+  return (
+    <section className="glass-panel intelligence-panel rounded-lg p-4">
+      <PanelHeader icon={FileText} title="RoadWatch Governance" subtitle="Transparent Authority Escalation Layer" />
+      <div className="mt-4 rounded-lg border border-cyan-100/10 bg-slate-950/60 p-3">
+        <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-cyan-100">
+          Authority Escalation Tracker
+        </div>
+        <div className="mt-3 grid gap-2 text-sm">
+          <GovernanceRow label="Report ID" value={escalation?.escalationId ?? "Not escalated"} />
+          <GovernanceRow label="Assigned" value={escalation?.department ?? "Chennai Smart Mobility Cell"} />
+          <GovernanceRow label="Priority" value={escalation?.priority ?? `${selectedRoad.risk.riskLevel} risk ready for review`} />
+          <GovernanceRow label="SLA" value={escalation?.recommendedSla ?? "Inspection SLA generated after escalation"} />
+          <GovernanceRow label="Status" value={escalation?.status ?? "Generated / Pending Review"} />
+        </div>
+      </div>
+
+      <div className="mt-3 rounded-lg border border-emerald-300/20 bg-emerald-500/10 p-3">
+        <div className="flex items-center justify-between gap-3">
+          <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-emerald-100">
+            Response Transparency Index
+          </span>
+          <span className="font-heading text-2xl font-semibold text-white">87%</span>
+        </div>
+        <p className="mt-2 text-xs leading-5 text-slate-300">
+          Based on report traceability, authority assignment, risk explanation availability, and SLA visibility.
+        </p>
+      </div>
+
+      <div className="mt-3 rounded-lg border border-slate-700/70 bg-slate-950/50 p-3">
+        <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-slate-300">
+          Public Transparency Timeline
+        </div>
+        <div className="mt-3 space-y-2">
+          {transparencyEvents.map((event) => (
+            <div key={`${event.time}-${event.event}`} className="grid grid-cols-[64px_1fr] gap-3 text-xs">
+              <span className="font-mono text-cyan-100">{event.time}</span>
+              <span className="text-slate-300">{event.event}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+        <button
+          type="button"
+          onClick={onEscalate}
+          className="inline-flex h-10 items-center justify-center rounded-md bg-red-400 px-3 font-heading text-sm font-semibold text-slate-950 transition hover:bg-red-300"
+        >
+          Escalate to Authority
+        </button>
+        <button
+          type="button"
+          onClick={onOpenReport}
+          className="inline-flex h-10 items-center justify-center rounded-md border border-cyan-200/20 bg-cyan-200/10 px-3 font-heading text-sm font-semibold text-cyan-100 transition hover:bg-cyan-200 hover:text-slate-950"
+        >
+          Public Report
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function GovernanceRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="grid grid-cols-[88px_1fr] gap-3">
+      <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-slate-500">{label}</span>
+      <span className="text-slate-200">{value}</span>
+    </div>
+  );
+}
+
+function createLocalEscalation(roadSegment: string, riskLevel: RiskLevel): EscalationRecord {
+  const corridorCode = roadSegment.slice(0, 3).toUpperCase().replace(/[^A-Z]/g, "R");
+  const id = `RL-CHN-${new Date().getFullYear()}-${corridorCode}-${Math.floor(1000 + Math.random() * 9000)}`;
+  return {
+    escalationId: id,
+    department: "Chennai Smart Mobility Cell",
+    secondaryDepartment: "Greater Chennai Corporation / Traffic Police",
+    priority: riskLevel === "critical" ? "Critical Infrastructure Risk" : "High Priority Review",
+    status: "Generated / Pending Review",
+    recommendedSla: riskLevel === "critical" ? "Inspection recommended within 4 hours" : "Inspection recommended within 24 hours",
+    timestamp: new Date().toISOString(),
+  };
+}
+
+function normalizeEscalation(record: Record<string, unknown>): EscalationRecord {
+  return {
+    escalationId: String(record.escalationId ?? `RL-CHN-${Date.now()}`),
+    department: String(record.department ?? "Chennai Smart Mobility Cell"),
+    secondaryDepartment: String(record.secondaryDepartment ?? "Greater Chennai Corporation / Traffic Police"),
+    priority: String(record.priority ?? "Critical Infrastructure Risk"),
+    status: String(record.status ?? "Generated / Pending Review"),
+    recommendedSla: String(record.recommendedSla ?? "Inspection recommended within 4 hours"),
+    timestamp: String(record.timestamp ?? new Date().toISOString()),
+  };
+}
+
+function escalationTimeline(reportId: string): TransparencyEvent[] {
+  return [
+    { time: "4:05 PM", event: "braking anomaly detected" },
+    { time: "4:31 PM", event: "road risk escalated" },
+    { time: "4:42 PM", event: "authority notification generated" },
+    { time: "4:51 PM", event: `public transparency record created: ${reportId}` },
+    { time: "5:10 PM", event: "inspection priority assigned" },
+  ];
+}
+
+function PublicReportModal({
+  selectedRoad,
+  escalation,
+  transparencyEvents,
+  onClose,
+}: {
+  selectedRoad: ReturnType<typeof getRoadWithRisk>;
+  escalation: EscalationRecord | null;
+  transparencyEvents: TransparencyEvent[];
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[700] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+      <motion.section
+        initial={{ opacity: 0, scale: 0.96 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="glass-panel max-h-[86vh] w-full max-w-2xl overflow-auto rounded-lg p-5"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="font-mono text-xs uppercase tracking-[0.22em] text-cyan-200">
+              Public RoadWatch Report
+            </p>
+            <h2 className="mt-2 font-heading text-2xl font-semibold text-white">{selectedRoad.name}</h2>
+            <p className="mt-1 text-sm text-slate-400">
+              {selectedRoad.area}, {selectedRoad.city} - {selectedRoad.risk.riskScore}% risk
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md border border-cyan-100/10 bg-slate-950 px-3 py-2 text-sm text-cyan-100"
+          >
+            Close
+          </button>
+        </div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <GovernanceRow label="Report ID" value={escalation?.escalationId ?? "RL-CHN-DEMO"} />
+          <GovernanceRow label="Status" value={escalation?.status ?? "Generated / Pending Review"} />
+          <GovernanceRow label="Assigned" value={escalation?.department ?? "Chennai Smart Mobility Cell"} />
+          <GovernanceRow label="Action" value={selectedRoad.risk.recommendedAction} />
+        </div>
+        <p className="mt-5 rounded-lg border border-cyan-100/10 bg-slate-950/60 p-3 text-sm leading-6 text-slate-300">
+          {selectedRoad.risk.aiExplanation}
+        </p>
+        <div className="mt-4 space-y-2">
+          {transparencyEvents.map((event) => (
+            <div key={`${event.time}-${event.event}-modal`} className="rounded-md border border-slate-700/70 bg-slate-950/50 p-3 text-sm">
+              <span className="font-mono text-xs text-cyan-100">{event.time}</span>
+              <span className="ml-3 text-slate-200">{event.event}</span>
+            </div>
+          ))}
+        </div>
+      </motion.section>
+    </div>
   );
 }
 
